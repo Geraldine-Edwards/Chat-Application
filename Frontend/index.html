@@ -4,12 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat Application 2026</title>
+     <script defer src="display-chat.js"></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <h1>Chatterbox</h1>
     <div id="chat-container">
-     
+      <!-- displays the current list of messages -->
+      <div id="chat-display">
+        <div id="chat-messages">
+        </div>
+      </div>
+    </div>
+    <div id="add-message-container">
+       <!-- add a new message to the chat -->
+      <form id="add-message-form">
+        <div id="add-chat-message"></div>
+        <input type="text" id="new-message" placeholder="Type your message here....." required>
+        <button type="submit" id="submit-message">Send</button>
+      </form>
     </div>
   </body>
 </html>
