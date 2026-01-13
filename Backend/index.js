@@ -29,3 +29,5 @@ app.get('/chat', (req, res) => {
 app.listen(port, () => {
     console.error(`Chat server listening on port ${port}`);
 })
+
+export default app;
