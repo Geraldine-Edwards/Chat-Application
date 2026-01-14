@@ -3,6 +3,7 @@ import express from "express";
 
 
 const app = express();
+app.use(express.json());
 
 export const chatMessages = [
     { message: "Welcome to the chat." },
@@ -30,9 +31,17 @@ app.get('/chat', (req, res) => {
     res.json(chatMessages);
 });
 
-// app.post('/chat', (req, res) => {
-
-// });
+app.post('/chat', (req, res) => {
+    //use destructuring to extract the 'message' property from the incoming request body
+    const { message } = req.body;
+    if (typeof message !== 'string' || message.length === 0) {
+        return res.status(400).json({ error: 'Message must be a non-empty string' });
+    }
+    //add the data to array
+    chatMessages.push({ message });
+    //return the updated array to immediately display all messages without using another GET request
+    res.status(201).json({ messages: chatMessages });
+});
 
 
 export default app;

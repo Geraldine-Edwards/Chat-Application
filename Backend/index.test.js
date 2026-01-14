@@ -3,8 +3,36 @@ import app, { chatMessages } from './index.js';
 
 
 // Test suite:
+// Firstly test the POST method at endpoint '/chat'.
 
-// check that the response is ok
+//should add a new message to chatMessages and return the updated array with the new message as the last element
+describe('POST /chat', () => {
+  it('should add a new message and return the updated messages array', async () => {
+    const initialLength = chatMessages.length;
+    const response = await request(app)
+      .post('/chat')
+      .send({ message: 'Test message' })
+      .set('Content-Type', 'application/json');
+    expect(response.statusCode).toBe(201);
+    expect(Array.isArray(response.body.messages)).toBe(true);
+    expect(response.body.messages.length).toBe(initialLength + 1);
+    expect(response.body.messages[response.body.messages.length - 1].message).toBe('Test message');
+  });
+
+  it('should return 400 for an empty message', async () => {
+    const response = await request(app)
+      .post('/chat')
+      .send({ message: '' })
+      .set('Content-Type', 'application/json');
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error).toBe('Message must be a non-empty string');
+  });
+});
+
+
+// Secondly, test the GET method at the endpoint '/chat'.
+
+//test that GET /chat returns ok
 describe('GET /chat', () => {
     it('should return an array of messages', async () => {
         const response = await request(app).get('/chat');
@@ -19,7 +47,7 @@ describe('GET /chat', () => {
     });
 });
     
-// edge cases
+//check that edge cases are handled for GET /chat
 describe('GET /chat edge cases', () => {
     it('returns 200 and an empty array if chatMessages is empty', async () => {
         chatMessages.length = 0; // clear the array
