@@ -3,8 +3,8 @@ import express from "express";
 
 
 const app = express();
-const port = 3000;
-const chatMessages = [
+
+export const chatMessages = [
     { message: "Welcome to the chat." },
     { message: "Hi there, how are you" },
     { message: "How are you feeling today?" },
@@ -13,11 +13,19 @@ const chatMessages = [
 
 app.use(cors());
 
-
-// validate chat messages
-
-
 app.get('/chat', (req, res) => {
+    //validate chat messages
+    for (const msg of chatMessages) {
+        if (
+            typeof msg !== 'object' ||
+            msg === null ||
+            !msg.hasOwnProperty('message') ||
+            typeof msg.message !== 'string' ||
+            msg.message.length === 0
+        ) {
+            return res.status(400).json({ error: 'Message must be a string' });
+        }
+    }
     console.error("Received a request for chat messages");
     res.json(chatMessages);
 });
@@ -26,8 +34,5 @@ app.get('/chat', (req, res) => {
 
 // });
 
-app.listen(port, () => {
-    console.error(`Chat server listening on port ${port}`);
-})
 
 export default app;
