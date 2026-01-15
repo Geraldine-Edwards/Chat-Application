@@ -16,7 +16,13 @@ function createMessage(text) {
   };
 }
 
-app.use(cors());
+const ALLOWED_ORIGINS = [
+  "http://127.0.0.1:5500",
+  "http://localhost:3000",
+  "https://geraldine-edwards-chat-application-frontend.hosting.codeyourfuture.io"
+];
+
+app.use(cors({origin: ALLOWED_ORIGINS}));
 
 app.get('/chat', (req, res) => {
     //validate chat messages
