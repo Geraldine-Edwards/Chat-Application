@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app, { chatMessages } from './index.js';
+import app, { chatMessages } from './app.js';
 
 
 // Test suite:
@@ -41,7 +41,9 @@ describe('GET /chat', () => {
         expect(response.body.length).toBeGreaterThan(0);
         response.body.forEach(msg => {
             expect(msg).toHaveProperty('message');
+            expect(typeof msg.id).toBe('string');
             expect(typeof msg.message).toBe('string');
+            expect(typeof msg.timestamp).toBe('string');
             expect(msg.message.length).toBeGreaterThan(0);
             });
     });

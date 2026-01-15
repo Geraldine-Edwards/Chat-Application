@@ -1,6 +1,12 @@
+//set the base API URL
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://geraldine-edwards-chat-application-backend.hosting.codeyourfuture.io";
+
 async function fetchAndDisplayChatMessages() {
     try {
-        const response = await fetch('http://localhost:3000/chat');
+        const response = await fetch(`${API_BASE_URL}/chat`);
         if (!response.ok) throw new Error('Error fetching chat')
             const data = await response.json()
 

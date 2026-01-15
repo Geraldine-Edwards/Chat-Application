@@ -6,7 +6,7 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-export const chatMessages = []
+export const chatMessages = [];
 
 function createMessage(text) {
   return {
@@ -24,9 +24,11 @@ app.get('/chat', (req, res) => {
         if (
             typeof msg !== 'object' ||
             msg === null ||
+            typeof msg.id !== 'string' ||
             !msg.hasOwnProperty('message') ||
             typeof msg.message !== 'string' ||
-            msg.message.length === 0
+            msg.message.length === 0 ||
+            typeof msg.timestamp !== 'string'
         ) {
             return res.status(400).json({ error: 'Message must be a string' });
         }
