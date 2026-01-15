@@ -31,7 +31,7 @@ window.addEventListener("load", fetchAndDisplayChatMessages)
 
 
 async function addChatMessage(newMessage) {
-    const backendURL = 'http://localhost:3000/chat';
+    const backendURL = `${API_BASE_URL}/chat`;
     const userFeedbackDiv = document.getElementById('add-chat-message');
     //clear the feedback div
     userFeedbackDiv.textContent = '';
