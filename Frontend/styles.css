@@ -52,7 +52,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 }
 .chat-bubble {
   background: #e0e0e0;

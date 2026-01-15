@@ -10,6 +10,8 @@ async function fetchAndDisplayChatMessages() {
             const div = document.createElement('div');
             div.className ="chat-bubble";
             div.textContent = msg.message;
+            // or, if we want the message and the timestamp
+            // div.textContent = `${msg.message} (${new Date(msg.timestamp).toLocaleString()})`;
             chatMessagesDiv.appendChild(div)
         });
 ;    } catch (error) {
