@@ -1,6 +1,6 @@
 //set the base API URL
 const API_BASE_URL =
-  window.location.hostname === "localhost"
+  ["localhost", "127.0.0.1"].includes(window.location.hostname)
     ? "http://localhost:3000"
     : "https://geraldine-edwards-chat-application-backend.hosting.codeyourfuture.io";
 
@@ -13,12 +13,23 @@ async function fetchAndDisplayChatMessages() {
         const chatMessagesDiv = document.querySelector("#chat-messages");
         chatMessagesDiv.innerHTML = '';
         data.forEach(msg => {
-            const div = document.createElement('div');
-            div.className ="chat-bubble";
-            div.textContent = msg.message;
-            // or, if we want the message and the timestamp
-            // div.textContent = `${msg.message} (${new Date(msg.timestamp).toLocaleString()})`;
-            chatMessagesDiv.appendChild(div)
+            //create a wrapper for each message
+            const wrapper = document.createElement('div');
+            wrapper.className = "chat-message-wrapper";
+
+            //sender name (small text above bubble)
+            const nameDiv = document.createElement('div');
+            nameDiv.className = "chat-sender";
+            nameDiv.textContent = msg.sender || "Anonymous";
+            wrapper.appendChild(nameDiv);
+
+            //message bubble
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className ="chat-bubble";
+            bubbleDiv.textContent = msg.message;
+            wrapper.appendChild(bubbleDiv);
+            
+            chatMessagesDiv.appendChild(wrapper)
         });
 ;    } catch (error) {
         document.querySelector("#chat-messages").innerText = "Sorry could not load chat"
@@ -30,7 +41,7 @@ async function fetchAndDisplayChatMessages() {
 window.addEventListener("load", fetchAndDisplayChatMessages)
 
 
-async function addChatMessage(newMessage) {
+async function addChatMessage(newMessage, senderName) {
     const backendURL = `${API_BASE_URL}/chat`;
     const userFeedbackDiv = document.getElementById('add-chat-message');
     //clear the feedback div
@@ -42,7 +53,7 @@ async function addChatMessage(newMessage) {
         const response = await fetch(backendURL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: newMessage})
+            body: JSON.stringify({ message: newMessage, sender: senderName})
         });
         if (response.ok) {
             fetchAndDisplayChatMessages();
@@ -72,6 +83,8 @@ async function addChatMessage(newMessage) {
 document.getElementById('add-message-form').addEventListener('submit', function(event) {
     event.preventDefault()
     const newMessage = document.getElementById('new-message').value;
-    addChatMessage(newMessage);
+    const senderName = document.getElementById('sender-name').value;
+    addChatMessage(newMessage, senderName);
     document.getElementById('new-message').value = '';
+    document.getElementById('sender-name').value = '';
 });

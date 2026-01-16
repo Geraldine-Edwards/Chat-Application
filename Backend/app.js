@@ -8,10 +8,12 @@ app.use(express.json());
 
 export const chatMessages = [];
 
-function createMessage(text) {
+
+function createMessage(text, sender) {
   return {
     id: crypto.randomUUID(), //generates a UUID v4
     message: text,
+    sender: sender,
     timestamp: new Date().toISOString(),
   };
 }
@@ -46,12 +48,15 @@ app.get('/chat', (req, res) => {
 
 app.post('/chat', (req, res) => {
     //use destructuring to extract the 'message' property from the incoming request body
-    const { message } = req.body;
-    if (typeof message !== 'string' || message.length === 0) {
-        return res.status(400).json({ error: 'Message must be a non-empty string' });
+    const { message, sender } = req.body;
+    if (typeof message !== 'string' || 
+        message.length === 0 || 
+        typeof sender !== 'string' ||
+        sender.trim().length === 0) {
+        return res.status(400).json({ error: "Message and sender's name must be a non-empty string" });
     }
     //add the new message object to the array
-    chatMessages.push(createMessage(message));
+    chatMessages.push(createMessage(message, sender));
     //return the updated array of message objects to immediately display all messages without using another GET request
     res.status(201).json({ messages: chatMessages });
 });

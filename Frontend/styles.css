@@ -54,6 +54,22 @@ body {
   justify-content: center;
   align-items: flex-start;
 }
+.chat-message-wrapper {
+  margin-bottom: 1em;
+}
+.chat-sender {
+  font-size: 0.85em;
+  color: #555;
+  margin-left: 8px;
+  margin-bottom: 2px;
+}
+.chat-bubble {
+  background: #e0e0e0;
+  border-radius: 16px;
+  padding: 10px 16px;
+  display: inline-block;
+  max-width: 70%;
+}
 .chat-bubble {
   background: #e0e0e0;
   color: #222;
