@@ -18,6 +18,17 @@ function createMessage(text, sender) {
   };
 }
 
+function escapeHTML(str) {
+    //chars are displayed as plain text in browsers
+  return str.replace(/[&<>"']/g, match => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[match]));
+}
+
 const ALLOWED_ORIGINS = [
   "http://127.0.0.1:5500",
   "http://localhost:3000",
@@ -50,11 +61,17 @@ app.post('/chat', (req, res) => {
     //use destructuring to extract the 'message' property from the incoming request body
     const { message, sender } = req.body;
     if (typeof message !== 'string' || 
-        message.length === 0 || 
+        message.trim().length === 0 || 
+        message.length > 300 ||
         typeof sender !== 'string' ||
-        sender.trim().length === 0) {
-        return res.status(400).json({ error: "Message and sender's name must be a non-empty string" });
+        sender.trim().length === 0 ||
+        sender.length > 50
+    ) {
+        return res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
     }
+    //sanitize the input
+    const safeMessage = escapeHTML(message);
+    const safeSender = escapeHTML(sender);
     //add the new message object to the array
     chatMessages.push(createMessage(message, sender));
     //return the updated array of message objects to immediately display all messages without using another GET request
