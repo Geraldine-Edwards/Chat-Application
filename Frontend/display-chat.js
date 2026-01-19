@@ -67,14 +67,14 @@ async function addChatMessage(newMessage, senderName) {
         setTimeout(() => {
             userFeedbackDiv.textContent = '';
             userFeedbackDiv.classList.remove('add-chat-success', 'add-chat-error');
-        }, 2000);
+        }, 8000);
     } catch (error) {
         userFeedbackDiv.textContent = 'Network error. Please try again.';
         userFeedbackDiv.classList.add('add-chat-error');
         setTimeout(() => {
             userFeedbackDiv.textContent = '';
             userFeedbackDiv.classList.remove('add-chat-error');
-        }, 3000);
+        }, 10000);
         console.error(error)
     }
 }

@@ -1,6 +1,11 @@
 import cors from "cors";
 import crypto from 'crypto';
 import express from "express";
+import { JSDOM } from "jsdom";
+import createDOMPurify from "dompurify";
+
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
 
 
 const app = express();
@@ -18,15 +23,9 @@ function createMessage(text, sender) {
   };
 }
 
-function escapeHTML(str) {
+function sanitizeHTML(str) {
     //chars are displayed as plain text in browsers
-  return str.replace(/[&<>"']/g, match => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[match]));
+  return DOMPurify.sanitize(str);
 }
 
 const ALLOWED_ORIGINS = [
@@ -69,11 +68,11 @@ app.post('/chat', (req, res) => {
     ) {
         return res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
     }
-    //sanitize the input
-    const safeMessage = escapeHTML(message);
-    const safeSender = escapeHTML(sender);
+    //sanitize the input using DOMPurify
+    const safeMessage = sanitizeHTML(message);
+    const safeSender = sanitizeHTML(sender);
     //add the new message object to the array
-    chatMessages.push(createMessage(message, sender));
+    chatMessages.push(createMessage(safeMessage, safeSender));
     //return the updated array of message objects to immediately display all messages without using another GET request
     res.status(201).json({ messages: chatMessages });
 });
