@@ -39,6 +39,8 @@ async function fetchAndDisplayChatMessages() {
 
 // show the current chat when the page loads
 window.addEventListener("load", fetchAndDisplayChatMessages)
+// poll for new messages every 2 seconds
+setInterval(fetchAndDisplayChatMessages, 2000);
 
 
 async function addChatMessage(newMessage, senderName) {
