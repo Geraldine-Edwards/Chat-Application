@@ -25,7 +25,7 @@ function createMessage(text, sender) {
 
 function sanitizeHTML(str) {
     //chars are displayed as plain text in browsers
-  return DOMPurify.sanitize(str);
+  return DOMPurify.sanitize(str, { FORBID_ATTR: ['style']});
 }
 
 const ALLOWED_ORIGINS = [
