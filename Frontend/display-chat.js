@@ -164,7 +164,8 @@ document.getElementById('add-message-form').addEventListener('submit', function(
 window.addEventListener("load", async () => {
     await ensureUserId();
     await fetchAndDisplayChatMessages()
+
+    //poll for new messages every 2 seconds
+    setInterval(fetchAndDisplayChatMessages, 2000);
 });
 
-//poll for new messages every 2 seconds
-setInterval(fetchAndDisplayChatMessages, 2000);
