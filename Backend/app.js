@@ -154,7 +154,7 @@ app.post('/chat', (req, res) => {
     }
 
     //use destructuring to extract the 'message' property from the incoming request body
-    const { message, sender } = req.body;
+    const { message, sender , color} = req.body;
 
     if (!isValidMessageInput(message, sender)) {
         return res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
@@ -164,10 +164,13 @@ app.post('/chat', (req, res) => {
     const safeMessage = sanitizeHTML(message);
     const safeSender = sanitizeHTML(sender);
 
+    const safeColor = typeof color ==='string'? color : '#000000'
+
     //use createMessage to make a message object, now with a userId
     const newMsg = {
     ...createMessage(safeMessage, safeSender),
-    userId: userId
+    userId: userId,
+    color: safeColor
     };
 
     //add the new message to the chat history

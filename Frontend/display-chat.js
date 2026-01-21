@@ -43,6 +43,7 @@ function appendMessageToChat(msg) {
   const bubbleDiv = document.createElement('div');
   bubbleDiv.className = "chat-bubble";
   bubbleDiv.textContent = msg.message;
+  bubbleDiv.style.color = msg.color || "#000000"
   wrapper.appendChild(bubbleDiv);
 
   chatMessagesDiv.appendChild(wrapper);
@@ -77,7 +78,7 @@ async function longPollMessages() {
 }
 
 // Send a new chat message
-async function addChatMessage(newMessage, senderName) {
+async function addChatMessage(newMessage, senderName, color) {
   const backendURL = `${API_BASE_URL}/chat`;
   const userFeedbackDiv = document.getElementById('add-chat-message');
   userFeedbackDiv.textContent = '';
@@ -87,7 +88,7 @@ async function addChatMessage(newMessage, senderName) {
     const response = await fetch(backendURL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ message: newMessage, sender: senderName }),
+      body: JSON.stringify({ message: newMessage, sender: senderName, color }),
       credentials: 'include'
     });
 
@@ -121,7 +122,9 @@ document.getElementById('add-message-form').addEventListener('submit', function(
   event.preventDefault();
   const newMessage = document.getElementById('new-message').value;
   const senderName = document.getElementById('sender-name').value;
-  addChatMessage(newMessage, senderName);
+  const color = document.getElementById('color-picker').value;
+  console.log("Selected color:", color);
+  addChatMessage(newMessage, senderName, color);
   document.getElementById('new-message').value = '';
   document.getElementById('sender-name').value = '';
 });
