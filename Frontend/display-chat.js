@@ -66,8 +66,8 @@ async function longPollMessages() {
     } else if (document.querySelectorAll('.chat-message-wrapper').length === 0) {
       showPlaceholder();
     }
-    //start the next poll after this one finishes
-    longPollMessages();
+    //only start the next poll after this one finishes
+    await longPollMessages();
   } catch (error) {
     showPlaceholder();
     console.error(error);
