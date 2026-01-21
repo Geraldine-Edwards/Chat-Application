@@ -66,11 +66,14 @@ async function longPollMessages() {
     } else if (document.querySelectorAll('.chat-message-wrapper').length === 0) {
       showPlaceholder();
     }
+    //start the next poll after this one finishes
+    longPollMessages();
   } catch (error) {
     showPlaceholder();
     console.error(error);
+    //pause before retrying on error to avoid flooding
+    setTimeout(longPollMessages, 2000);
   }
-  longPollMessages(); // Start next long-poll
 }
 
 // Send a new chat message
