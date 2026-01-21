@@ -17,18 +17,46 @@ app.use(cookieParser());
 export const chatMessages = [];
 export const users = new Map();
 
+let waitingClients = [];
+
 function createMessage(text, sender) {
   return {
     messageId: crypto.randomUUID(), //generates a UUID v4
     message: text,
     sender: sender,
-    timestamp: new Date().toISOString(),
+    timestamp: Date.now(),
   };
+}
+function isValidMessageInput(message,sender) {
+    return (
+        typeof message == 'string' || 
+        message.trim().length === 0 || 
+        message.length <= 300 ||
+        typeof sender == 'string' ||
+        sender.trim().length === 0 ||
+        sender.length <= 50
+    );
 }
 
 function sanitizeHTML(str) {
     //chars are displayed as plain text in browsers
   return DOMPurify.sanitize(str, { FORBID_ATTR: ['style']});
+}
+
+function validateAllMessages() {
+  for (const msg of chatMessages) {
+    if (
+      typeof msg !== "object" ||
+      msg === null ||
+      typeof msg.messageId !== "string" ||
+      typeof msg.message !== "string" ||
+      msg.message.length === 0 ||
+      typeof msg.timestamp !== "number"  //**fix for Jest test
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 const ALLOWED_ORIGINS = [
@@ -51,24 +79,45 @@ app.use(cors({
   credentials: true //this is important as it allows cookies to be sent cross-origin
 }));
 
+
 app.get('/chat', (req, res) => {
-    //validate chat messages
-    for (const msg of chatMessages) {
-        if (
-            typeof msg !== 'object' ||
-            msg === null ||
-            typeof msg.messageId !== 'string' ||
-            !msg.hasOwnProperty('message') ||
-            typeof msg.message !== 'string' ||
-            msg.message.length === 0 ||
-            typeof msg.timestamp !== 'string'
-        ) {
-            return res.status(400).json({ error: 'Message must be a string' });
-        }
-    }
-    console.error("Received a request for chat messages");
-    //return the full message objects
-    res.json(chatMessages);
+  //only validate if there are messages to send
+  if (chatMessages.length > 0 && !validateAllMessages()) {
+    return res.status(400).json({ error: "Invalid message data" });
+  }
+  //read the since query parameter from the request (if exists), if not, defaults to 0 (i.e. give all the messages)
+  const since = req.query.since ? Number(req.query.since) : 0;
+
+  //filter messages to newer ones that the client's last seen timestamp
+  const newMessages = chatMessages.filter(msg => msg.timestamp > since);
+  
+  //respond immediately if new messages
+  if (newMessages.length > 0) {
+    return res.json(newMessages);
+  }
+  
+  //if no new messages then wait - store the response object and the timestamp in the array
+  const client =  { res, since};
+  waitingClients.push(client);
+  
+  //as soon as a client receives a response (either because a new message was sent, or because the timeout fired),
+  const timeout = setTimeout(() => {
+    
+    //find the index position of the client in the client array
+    const index = waitingClients.indexOf(client);
+    
+    //if client is found in teh array (i.e. index is not -1)
+    if (index !== -1) waitingClients.splice(index, 1);
+
+    res.json([]);
+  }, 30000);
+
+  //clean up if client disconnects before timeout
+  res.on('close', () => {
+    clearTimeout(timeout);
+    const index = waitingClients.indexOf(client);
+    if (index !== -1) waitingClients.splice(index, 1);
+  })
 });
 
 app.post('/identity', (req, res) => {
@@ -106,25 +155,31 @@ app.post('/chat', (req, res) => {
 
     //use destructuring to extract the 'message' property from the incoming request body
     const { message, sender } = req.body;
-    if (typeof message !== 'string' || 
-        message.trim().length === 0 || 
-        message.length > 300 ||
-        typeof sender !== 'string' ||
-        sender.trim().length === 0 ||
-        sender.length > 50
-    ) {
+
+    if (!isValidMessageInput(message, sender)) {
         return res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
     }
+
     //sanitize the input using DOMPurify
     const safeMessage = sanitizeHTML(message);
     const safeSender = sanitizeHTML(sender);
-    //add the new message object to the array
-    chatMessages.push({
-        ...createMessage(safeMessage, safeSender),
-        userId
-    });
-    //return the updated array of message objects to immediately display all messages without using another GET request
-    res.status(201).json({ messages: chatMessages });
+
+    //use createMessage to make a message object, now with a userId
+    const newMsg = {
+    ...createMessage(safeMessage, safeSender),
+    userId: userId
+    };
+
+    //add the new message to the chat history
+    chatMessages.push(newMsg);
+
+    // send the new message as json response to all clients waiting for a new message
+    waitingClients.forEach(client => client.res.json([newMsg]));
+    //clear the array after notifying all clients
+    waitingClients = [];
+
+    //send a 201 confirmation status response to the client who POSTed the new msg
+    res.status(201).json({ message: newMsg });
 });
 
 
