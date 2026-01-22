@@ -51,7 +51,7 @@ function validateAllMessages() {
       typeof msg.messageId !== "string" ||
       typeof msg.message !== "string" ||
       msg.message.length === 0 ||
-      typeof msg.timestamp !== "number"  //**fix for Jest test
+      typeof msg.timestamp !== "number"
     ) {
       return false;
     }
