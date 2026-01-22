@@ -29,11 +29,11 @@ function createMessage(text, sender) {
 }
 function isValidMessageInput(message,sender) {
     return (
-        typeof message == 'string' || 
-        message.trim().length === 0 || 
-        message.length <= 300 ||
-        typeof sender == 'string' ||
-        sender.trim().length === 0 ||
+        typeof message === 'string' && 
+        message.trim().length > 0 && 
+        message.length <= 300 &&
+        typeof sender === 'string' &&
+        sender.trim().length > 0 &&
         sender.length <= 50
     );
 }
