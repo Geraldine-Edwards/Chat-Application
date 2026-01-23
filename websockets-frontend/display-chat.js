@@ -78,6 +78,25 @@ function appendMessageToChat(msg) {
   chatMessagesDiv.appendChild(wrapper);
 }
 
+//fetch all the messages since a specified time (here is 0)
+async function fetchAndDisplayMessages(since = 0) {
+  const url = since
+    ? `${API_BASE_URL}/chat?since=${since}`
+    : `${API_BASE_URL}/chat`;
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) throw new Error('Error fetching chat');
+  const newMessages = await response.json();
+
+  if (newMessages.length > 0) {
+    newMessages.forEach(msg => {
+      appendMessageToChat(msg);
+      lastTimestamp = Math.max(lastTimestamp, new Date(msg.timestamp).getTime());
+    });
+  } else if (document.querySelectorAll('.chat-message-wrapper').length === 0) {
+    showPlaceholder();
+  }
+}
+
 // Long-polling: fetch new messages and update UI
 async function longPollMessages() {
 
@@ -85,21 +104,7 @@ async function longPollMessages() {
     if (wsConnected) return;
 
   try {
-    const url = lastTimestamp
-      ? `${API_BASE_URL}/chat?since=${lastTimestamp}`
-      : `${API_BASE_URL}/chat`;
-    const response = await fetch(url, { credentials: 'include' });
-    if (!response.ok) throw new Error('Error fetching chat');
-    const newMessages = await response.json();
-
-    if (newMessages.length > 0) {
-      newMessages.forEach(msg => {
-        appendMessageToChat(msg);
-        lastTimestamp = Math.max(lastTimestamp, new Date(msg.timestamp).getTime());
-      });
-    } else if (document.querySelectorAll('.chat-message-wrapper').length === 0) {
-      showPlaceholder();
-    }
+    await fetchAndDisplayMessages(lastTimestamp)
     //only start the next poll after this one finishes
     await longPollMessages();
   } catch (error) {
@@ -149,9 +154,20 @@ document.getElementById('add-message-form').addEventListener('submit', function(
   document.getElementById('sender-name').value = '';
 });
 
+
+async function fetchInitialMessages() {
+  try {
+    await fetchAndDisplayMessages();
+  } catch (error) {
+    showPlaceholder();
+    console.error(error);
+  }
+}
+
 // On page load, show placeholder and start long-polling
 window.addEventListener("load", async () => {
     await ensureUserId();
     showPlaceholder();
+    await fetchInitialMessages()
     longPollMessages();
 });
