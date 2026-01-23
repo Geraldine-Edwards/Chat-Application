@@ -11,8 +11,28 @@ const DOMPurify = createDOMPurify(window);
 
 
 const app = express();
+
 app.use(express.json());
 app.use(cookieParser());
+//use CORS middleware with dynamic origin check + credentials for HTTP server (REST API)
+app.use(cors({
+  origin: function(origin, callback) {
+    //allow requests with no origin (like curl or same-origin)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, origin);  //allow this origin
+    } else {
+      callback(new Error("Not allowed by CORS")); //reject others
+    }
+  },
+  credentials: true //this is important as it allows cookies to be sent cross-origin
+}));
+
+export const ALLOWED_ORIGINS = [
+  "http://127.0.0.1:5500",
+
+  "http://localhost:3000",
+  "https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io"
+];
 
 //temp storage
 export const chatMessages = [];
@@ -21,12 +41,12 @@ export const users = new Map();
 let waitingClients = [];
 
 function createMessage(text, sender) {
-  return {
-    messageId: crypto.randomUUID(), //generates a UUID v4
-    message: text,
-    sender: sender,
-    timestamp: Date.now(),
-  };
+    return {
+        messageId: crypto.randomUUID(), //generates a UUID v4
+        message: text,
+        sender: sender,
+        timestamp: Date.now(),
+    };
 }
 
 function isValidMessageInput(message,sender) {
@@ -42,91 +62,83 @@ function isValidMessageInput(message,sender) {
 
 function sanitizeHTML(str) {
     //chars are displayed as plain text in browsers
-  return DOMPurify.sanitize(str, { FORBID_ATTR: ['style']});
+    return DOMPurify.sanitize(str, { FORBID_ATTR: ['style']});
 }
 
 function validateAllMessages() {
-  for (const msg of chatMessages) {
-    if (
-      typeof msg !== "object" ||
-      msg === null ||
-      typeof msg.messageId !== "string" ||
-      typeof msg.message !== "string" ||
-      msg.message.length === 0 ||
-      typeof msg.timestamp !== "number"
-    ) {
-      return false;
+    for (const msg of chatMessages) {
+        if (
+        typeof msg !== "object" ||
+        msg === null ||
+        typeof msg.messageId !== "string" ||
+        typeof msg.message !== "string" ||
+        msg.message.length === 0 ||
+        typeof msg.timestamp !== "number"
+        ) {
+        return false;
+        }
     }
+    return true;
+}
+
+function validateAndSanitizeMessage(body, res) {
+    //use destructuring to extract the 'message' property from the incoming request body
+    const { message, sender , color} = body;
+
+    if (!isValidMessageInput(message, sender)) {
+        res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
+        return null;
+    }
+
+    //return the validated object
+    return {
+        //sanitize the input using DOMPurify
+        message: sanitizeHTML(message),
+        sender: sanitizeHTML(sender),
+        color: typeof color ==='string'? color : '#000000'
+    };
+}
+
+//check that any stored messages are valid; reject request if not
+function ensureValidStoredMessages(res) {
+    if (chatMessages.length > 0 && !validateAllMessages()) {
+    res.status(400).json({ error: "Invalid message data" });
+    return false;
   }
   return true;
 }
 
-export const ALLOWED_ORIGINS = [
-  "http://127.0.0.1:5500",
+//add the client to the long-polling queue
+function registerWaitingClient(res, since) {
+    //store the response object and the timestamp in the array
+    const client =  { res, since };
+    waitingClients.push(client);
 
-  "http://localhost:3000",
-  "https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io"
-];
+    //if no new messages arrive during the timeout respond with an empty array
+    const timeout = setTimeout(() => {
+        removeWaitingClient(client);
+        res.json([]);
+    }, 30000);
 
-//use CORS middleware with dynamic origin check + credentials for HTTP server (REST API)
-app.use(cors({
-  origin: function(origin, callback) {
-    //allow requests with no origin (like curl or same-origin)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, origin);  //allow this origin
-    } else {
-      callback(new Error("Not allowed by CORS")); //reject others
-    }
-  },
-  credentials: true //this is important as it allows cookies to be sent cross-origin
-}));
+    //clean up if client disconnects early (before timeout completes)
+    res.on('close', () => {
+        //use the 'clear timeout' method
+        clearTimeout(timeout);
+        removeWaitingClient(client);
+    }); 
+}
 
-//keep HTTP GET endpoint for reliability of fetching all messages using the correct state
-app.get('/chat', (req, res) => {
-  //only validate if there are messages to send
-  if (chatMessages.length > 0 && !validateAllMessages()) {
-    return res.status(400).json({ error: "Invalid message data" });
-  }
-  //read the since query parameter from the request (if exists), if not, defaults to 0 (i.e. give all the messages)
-  const since = req.query.since ? Number(req.query.since) : 0;
-
-  //filter messages to newer ones that the client's last seen timestamp
-  const newMessages = chatMessages.filter(msg => msg.timestamp > since);
-  
-  //respond immediately if new messages
-  if (newMessages.length > 0) {
-    return res.json(newMessages);
-  }
-  
-  //if no new messages then wait - store the response object and the timestamp in the array
-  const client =  { res, since};
-  waitingClients.push(client);
-  
-  //as soon as a client receives a response (either because a new message was sent, or because the timeout fired),
-  const timeout = setTimeout(() => {
-    
-    //find the index position of the client in the client array
+function removeWaitingClient(client) {
+    //find the index position of the client in the client waitingClients array
     const index = waitingClients.indexOf(client);
     
     //if client is found in teh array (i.e. index is not -1)
     if (index !== -1) waitingClients.splice(index, 1);
+}
 
-    res.json([]);
-  }, 30000);
-
-  //clean up if client disconnects before timeout
-  res.on('close', () => {
-    clearTimeout(timeout);
-    const index = waitingClients.indexOf(client);
-    if (index !== -1) waitingClients.splice(index, 1);
-  })
-});
-
-
-//keep the HTTP POST endpoint for identity cookies as they use the httpOnly, secure and sameSite features 
-//from the HTTP(S) Set-Cookie headers
-app.post('/identity', (req, res) => {
-    //check if users have a cookie already; server is the authority
+//use the httpOnly, secure and sameSite features from the HTTP(S) Set-Cookie headers
+function ensureUserId(req, res) {
+ //check if users have a cookie already; server is the authority
     let userId = req.cookies.userId;
 
     if (!userId) {
@@ -134,54 +146,33 @@ app.post('/identity', (req, res) => {
         userId = crypto.randomUUID();
 
         //store creation info in server memory
-        users.set(userId, {
-        createdAt:new Date().toISOString()
-        });
+        users.set(userId, {createdAt:new Date().toISOString()});
+
         //set the cookie in teh browser
-    res.cookie("userId", userId, {
-        //JS cannot read/modify
-        httpOnly: true,
-        //protects against CSRF
-        sameSite: "lax",
-        //only over HTTPS in production (works locally over HTTP)
-        secure: process.env.NODE_ENV === 'production'
+         res.cookie("userId", userId, {
+            //JS cannot read/modify
+            httpOnly: true,
+            //protects against CSRF
+            sameSite: "lax",
+            //only over HTTPS in production (works locally over HTTP)
+            secure: process.env.NODE_ENV === 'production'
         });
     }
+    
+    return userId;
+}
 
-    res.json({userId});
-});
-
-//use both HTTP POST and webSocket server for broadcasting new messages to all connected HTTP/WebSocket clients
-app.post('/chat', (req, res) => {
+function ensureUserCookie(req, res){
     const userId = req.cookies.userId;
 
     if (!userId) {
-        return res.status(401).json({error: "No identity cookie found"});
+        res.status(401).json({error: "No identity cookie found"});
+        return null;
     }
+    return userId;
+}
 
-    //use destructuring to extract the 'message' property from the incoming request body
-    const { message, sender , color} = req.body;
-
-    if (!isValidMessageInput(message, sender)) {
-        return res.status(400).json({ error: "Message and sender's name must be non-empty strings (max 300 chars for message, 50 for sender)" });
-    }
-
-    //sanitize the input using DOMPurify
-    const safeMessage = sanitizeHTML(message);
-    const safeSender = sanitizeHTML(sender);
-
-    const safeColor = typeof color ==='string'? color : '#000000'
-
-    //use createMessage to make a message object, now with a userId
-    const newMsg = {
-    ...createMessage(safeMessage, safeSender),
-    userId: userId,
-    color: safeColor
-    };
-
-    //add the new message to the chat history
-    chatMessages.push(newMsg);
-
+function broadcastMessage(newMsg) {
     //broadcast to all connected WebSocket clients
     if (serverSocket && serverSocket.clients) {
         serverSocket.clients.forEach(client => {
@@ -196,6 +187,58 @@ app.post('/chat', (req, res) => {
     waitingClients.forEach(client => client.res.json([newMsg]));
     //clear the array after notifying all clients
     waitingClients = [];
+}
+
+//keep HTTP GET endpoint for reliability of fetching all messages using the correct state
+app.get('/chat', (req, res) => {
+    //validate stored messages
+    if (!ensureValidStoredMessages(res)) return;
+
+    //check which message to send:
+    //read the since parameter from the request query (if exists), if not, defaults to 0 (i.e. give all the messages from the beginning)
+    const since = req.query.since ? Number(req.query.since) : 0;
+
+    //filter messages to newer ones than the client's last seen timestamp
+    const newMessages = chatMessages.filter(msg => msg.timestamp > since);
+    
+    //respond immediately if new messages
+    if (newMessages.length > 0) {
+        return res.json(newMessages);
+    }
+    
+    //otherwise register the client for long-polling
+    registerWaitingClient(res, since);
+});
+
+
+//keep the HTTP POST endpoint for identity cookies using the set cookie headers function
+app.post('/identity', (req, res) => {
+   const userId = ensureUserId(req, res);
+   res.json({userId})
+});
+
+//use both HTTP POST and webSocket server for broadcasting new messages to all connected HTTP/WebSocket clients
+app.post('/chat', (req, res) => {
+    //check for a client cookie id
+    const userId = ensureUserCookie(req, res);
+    if (!userId) return;
+    
+    //check incoming request body is cleaned/safe
+    const sanitized = validateAndSanitizeMessage(req.body, res);
+    if (!sanitized) return;
+
+    //use createMessage to make a message object, now with userId, colour and likes/dislikes
+    const newMsg = {
+    ...createMessage(sanitized.message, sanitized.sender),
+    userId: userId,
+    color: sanitized.color,
+    likes: 0,
+    dislikes: 0
+    };
+
+    //add the new message to the chat history
+    chatMessages.push(newMsg);
+    broadcastMessage(newMsg);
 
     //send a 201 confirmation status response to the client who sent the new msg
     res.status(201).json({ message: newMsg });
