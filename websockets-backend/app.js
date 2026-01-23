@@ -65,7 +65,7 @@ export const ALLOWED_ORIGINS = [
   "http://127.0.0.1:5500",
 
   "http://localhost:3000",
-  "https://geraldine-edwards-chat-application-frontend.hosting.codeyourfuture.io"
+  "https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io"
 ];
 
 //use CORS middleware with dynamic origin check + credentials for HTTP server (REST API)

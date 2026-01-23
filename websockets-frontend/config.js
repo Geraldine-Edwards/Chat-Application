@@ -3,4 +3,4 @@ export const API_BASE_URL =
     ? "http://localhost:3000"
     : window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:3000"
-    : "https://geraldine-edwards-chat-application-backend.hosting.codeyourfuture.io";
+    : "https://geraldine-edwards-chat-app-websockets-backend.hosting.codeyourfuture.io";
