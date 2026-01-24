@@ -1,5 +1,29 @@
 import { API_BASE_URL } from './config.js';
 
+//handle incoming WebSocket messages
+function handleSocketMessage(event, onNewMessage) {
+    try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'new-message') {
+            onNewMessage(msg.data);
+        } else {
+            console.log("Other message from server:", msg);
+        }
+    } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+    }
+}
+
+//show a WebSocket connection error in the chat display
+function showWebSocketError() {
+    const chatMessagesDiv = document.querySelector("#chat-messages");
+    if (!chatMessagesDiv.querySelector('.chat-error')) {
+        const errorDiv = document.createElement('div');
+        errorDiv.textContent = "Connection problem: Unable to receive live updates. Trying to reconnect...";
+        errorDiv.className = "chat-error";
+        chatMessagesDiv.appendChild(errorDiv);
+    }
+}
 
 export function setUpClientWebSocket(onNewMessage, setWsConnected){
     const webSocketProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -17,29 +41,12 @@ export function setUpClientWebSocket(onNewMessage, setWsConnected){
     }
 
     //handle incoming msgs from the server (such as handshake or broadcast msgs - parse the msg data)
-    clientSocket.onmessage = (event) => {
-        try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'new-message') {
-                //this calls the appendMessagesToChat() function in display-chat.js with the message data
-                onNewMessage(msg.data); 
-            } else {
-                console.log("Other message from server:", msg);
-            }
-        } catch (err) {
-            console.error("Error parsing WebSocket message:", err)
-        }
-    };    
+    clientSocket.onmessage = (event) => handleSocketMessage(event, onNewMessage);
+   
 
     clientSocket.onerror = (err) => {
         console.error("WebSocket error:", err);
-        const chatMessagesDiv = document.querySelector("#chat-messages");
-        if (!chatMessagesDiv.querySelector('.chat-error')) {
-        const errorDiv = document.createElement('div');
-        errorDiv.textContent = "Connection problem: Unable to receive live updates. Trying to reconnect...";
-        errorDiv.className = "chat-error";
-        chatMessagesDiv.appendChild(errorDiv);
-        }
+        showWebSocketError();
     };
 
     clientSocket.onclose = () => {
@@ -47,9 +54,6 @@ export function setUpClientWebSocket(onNewMessage, setWsConnected){
         //set the value of the websocket status flag to off
         if (setWsConnected) setWsConnected(false);
         setTimeout(() => setUpClientWebSocket(onNewMessage), 2000)
-    }
-
-    
-   
+    };
 
 }
