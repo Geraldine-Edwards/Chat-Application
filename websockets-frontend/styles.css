@@ -153,6 +153,20 @@ body {
   background: var(--primary-colour); 
 }
 
+/* like/dislike buttons */
+.like-btn, .dislike-btn {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 4px 8px;
+  margin: 0 2px;
+  transition: background 0.2s, box-shadow 0.2s;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
 /* user feedback */
 .add-chat-success {
   display: block;

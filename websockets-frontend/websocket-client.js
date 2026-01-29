@@ -1,14 +1,18 @@
 import { API_BASE_URL } from './config.js';
+import { updateLikeDislikeUI} from './display-chat.js';
+
 
 //handle incoming WebSocket messages
-function handleSocketMessage(event, onNewMessage) {
+function handleSocketMessage(event, appendMessageToChat) {
     try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'new-message') {
-            onNewMessage(msg.data);
+            appendMessageToChat(msg.data);
+        } else if (msg.type === 'like-update') {
+            updateLikeDislikeUI(msg.data);
         } else {
             console.log("Other message from server:", msg);
-        }
+        } 
     } catch (err) {
         console.error("Error parsing WebSocket message:", err);
     }

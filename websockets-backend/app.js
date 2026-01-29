@@ -34,8 +34,9 @@ export const ALLOWED_ORIGINS = [
   "https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io"
 ];
 
-//temp storage
+//temp storage of messages
 export const chatMessages = [];
+//temp storage of key, value pairs (will be userId: {cratedAt: <value>})
 export const users = new Map();
 
 let waitingClients = [];
@@ -141,14 +142,14 @@ function ensureUserId(req, res) {
  //check if users have a cookie already; server is the authority
     let userId = req.cookies.userId;
 
+    // if not, generate (anonymous) user id
     if (!userId) {
-        //generate new (anonymous) user id
         userId = crypto.randomUUID();
 
-        //store creation info in server memory
+        //use the temp storage 'users' Map() to create the key-value pair of id and timestamp
         users.set(userId, {createdAt:new Date().toISOString()});
 
-        //set the cookie in teh browser
+        //set the cookie in the browser
          res.cookie("userId", userId, {
             //JS cannot read/modify
             httpOnly: true,
@@ -172,19 +173,44 @@ function ensureUserCookie(req, res){
     return userId;
 }
 
-function broadcastMessage(newMsg) {
+//middleware example
+function requireUserCookie(req, res, next){
+    const userId = ensureUserCookie(req, res);
+    
+    // ensureUserCookie() handles the error
+    if (!userId) return; 
+    //attach the userID to the request for using in the route
+    req.userId = userId;
+    next();
+}
+
+function broadcastToWebSocketClients(type, data) {
     //broadcast to all connected WebSocket clients
     if (serverSocket && serverSocket.clients) {
         serverSocket.clients.forEach(client => {
             if (client.readyState === client.OPEN) {
-                client.send(JSON.stringify({type: 'new-message', data: newMsg}));
+                client.send(JSON.stringify({type, data}));
             }
         });
     }
+}
+
+
+function formatMessageForClient(msg){
+    return {
+        ...msg,
+        likes: msg.likes ? msg.likes.size : 0,
+        dislikes: msg.dislikes ? msg.dislikes.size : 0
+    };
+}
+
+//websocket version of the GET request route
+function broadcastNewMessage(newMsg) {
+    broadcastToWebSocketClients('new-message', formatMessageForClient(newMsg));
 
     //for any long-polling clients:
     //send the new message as json response to all clients waiting for a new message
-    waitingClients.forEach(client => client.res.json([newMsg]));
+    waitingClients.forEach(client => client.res.json([formatMessageForClient(newMsg)]));
     //clear the array after notifying all clients
     waitingClients = [];
 }
@@ -203,7 +229,13 @@ app.get('/chat', (req, res) => {
     
     //respond immediately if new messages
     if (newMessages.length > 0) {
-        return res.json(newMessages);
+        //ensure that the Sets are converted to counts (map the messages to plain objects with counts)
+        const safeMessages = newMessages.map(msg => ({
+            ...msg,
+        likes: msg.likes ? msg.likes.size : 0,
+        dislikes: msg.dislikes ? msg.dislikes.size : 0
+        }));
+        return res.json(safeMessages);
     }
     
     //otherwise register the client for long-polling
@@ -217,12 +249,11 @@ app.post('/identity', (req, res) => {
    res.json({userId})
 });
 
+
 //use both HTTP POST and webSocket server for broadcasting new messages to all connected HTTP/WebSocket clients
-app.post('/chat', (req, res) => {
-    //check for a client cookie id
-    const userId = ensureUserCookie(req, res);
-    if (!userId) return;
-    
+//requireUserCookie ensures that the req.userId exists
+app.post('/chat', requireUserCookie, (req, res) => {
+        
     //check incoming request body is cleaned/safe
     const sanitized = validateAndSanitizeMessage(req.body, res);
     if (!sanitized) return;
@@ -230,19 +261,52 @@ app.post('/chat', (req, res) => {
     //use createMessage to make a message object, now with userId, colour and likes/dislikes
     const newMsg = {
     ...createMessage(sanitized.message, sanitized.sender),
-    userId: userId,
+    userId: req.userId,
     color: sanitized.color,
-    likes: 0,
-    dislikes: 0
+    //create a unique set object for the likes/dislikes so that a userID can only appear once per message
+    likes: new Set(),
+    dislikes: new Set()
     };
 
     //add the new message to the chat history
     chatMessages.push(newMsg);
-    broadcastMessage(newMsg);
+    broadcastNewMessage(newMsg);
 
     //send a 201 confirmation status response to the client who sent the new msg
     res.status(201).json({ message: newMsg });
 });
 
+//requireUserCookie() ensures that the req.userId exists
+app.post('/like', requireUserCookie, (req, res) => {
+    const { messageId, action } = req.body;
+    const msg = chatMessages.find(m => m.messageId === messageId);
+    if (!msg) {
+        return res.status(404).json({ error: "Message not found" });
+    }
+
+    //remove user from both sets first (delete() does nothing if user not present in the set)
+    msg.likes.delete(req.userId);
+    msg.dislikes.delete(req.userId);
+
+    if (action === "like") {
+        msg.likes.add(req.userId)
+    } else if (action === "dislike") {
+        msg.dislikes.add(req.userId)
+    } else {
+        return res.status(400).json({ error: "Invalid action" });
+    }
+
+    //broadcast the update to all clients
+    broadcastToWebSocketClients("like-update", {
+        messageId: msg.messageId,
+        //.size is the count of userIDs
+        likes: msg.likes.size,
+        dislikes: msg.dislikes.size
+    });
+
+    //send the id and number of Ids in likes/dislikes
+    res.json({ messageId: msg.messageId, likes: msg.likes.size, dislikes: msg.dislikes.size});
+
+});
 
 export default app;

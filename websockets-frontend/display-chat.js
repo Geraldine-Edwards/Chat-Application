@@ -61,6 +61,8 @@ function appendMessageToChat(msg) {
   //create a message wrapper
   const wrapper = document.createElement('div');
   wrapper.className = "chat-message-wrapper";
+  //access the message id in the new msg object and assign it to a 'data-message-id="<id>"' attribute in the div
+  wrapper.dataset.messageId = msg.messageId
 
   const nameDiv = document.createElement('div');
   nameDiv.className = "chat-sender";
@@ -181,6 +183,43 @@ async function fetchInitialMessages() {
   } catch (error) {
     showPlaceholder();
     console.error(error);
+  }
+}
+
+document.querySelector("#chat-messages").addEventListener("click", function(event) {
+  if (event.target.classList.contains("like-btn") || event.target.classList.contains("dislike-btn")) {
+    const wrapper = event.target.closest(".chat-message-wrapper");
+    if (!wrapper) return;
+    const messageId = wrapper.dataset.messageId;
+    const action = event.target.classList.contains("like-btn") ? "like" : "dislike";
+    sendLikeDislike(messageId, action);
+  }
+})
+
+export function updateLikeDislikeUI(data) {
+  const wrapper = document.querySelector(`.chat-message-wrapper[data-message-id="${data.messageId}"]`);
+  if (!wrapper) return;
+  const likeCount = wrapper.querySelector('.like-count');
+  const dislikeCount = wrapper.querySelector('.dislike-count');
+  if (likeCount) likeCount.textContent = data.likes;
+  if (dislikeCount) dislikeCount.textContent = data.dislikes;
+}
+
+//send the like/dislike to backend
+async function sendLikeDislike(messageId, action) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/like`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ messageId, action}), 
+    });
+    if (!response.ok) {
+      console.error("Failed to send like/dislike");
+    }
+    const data = await response.json();
+  } catch (err) {
+    console.error("Error sending like/dislike:", err);
   }
 }
 
