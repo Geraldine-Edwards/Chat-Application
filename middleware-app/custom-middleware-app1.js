@@ -3,6 +3,7 @@ import express from "express";
 
 const app = express();
 
+//custom middleware
 const usernameHeader = function(req, res, next) {
     //use req.get() to read the header
     const username = req.get('X-Username'); //or req.header['x-username']
@@ -11,17 +12,32 @@ const usernameHeader = function(req, res, next) {
     next();
 }
 
-app.use (express.json()); //is built in middleware to parse JSON
+//custom middleware
+const parseAndValidateBody = function(req, res, next) {
+    // collect incoming data chunks (bytes) from the request body in addQuote() function from display-quotes.js
+    const bodyBytes = [];
+    req.on("data", chunk => bodyBytes.push(...chunk));
 
-const validateBodyIsArrayOfStrings = function(req, res, next) {
-
-    if (!Array.isArray(req.body) || !req.body.every(item => typeof item === 'string')) {
-        return res.status(400).send("Expected the request body to be a JSON array of strings")
-    }
-    next()
+    // 'end' signals all data has been received, so can then process the complete body
+    req.on("end", () => {
+        //Buffer is a special object used to store raw binary data in memory
+        const bodyString = Buffer.from(bodyBytes).toString();
+        let body;
+        try {
+            body = JSON.parse(bodyString);
+        } catch (error) {
+            return res.status(400).json({ error: "Invalid data format: Please send valid JSON." });
+        }
+        if (!Array.isArray(body) || !body.every(item => typeof item === 'string')) {
+            return res.status(400).send("Expected the request body to be a JSON array of strings")
+        }
+        req.body = body;
+        next()
+    });
 }
 
-app.post('/', usernameHeader, validateBodyIsArrayOfStrings, (req, res) => {
+
+app.post('/', usernameHeader, parseAndValidateBody, (req, res) => {
     let authenticatedResponse;
     if (!req.username) {
         authenticatedResponse = "You are not authenticated.";
@@ -34,11 +50,12 @@ app.post('/', usernameHeader, validateBodyIsArrayOfStrings, (req, res) => {
     const subjectName = count === 1 ? "subject" : "subjects";
     const subjectList = count > 0 ? `: ${subjects.join(", ")}` : "";
     
-    const subjectsResponse = `You have requested information about ${count} ${subjectName}: ${subjectList}.`;
+    const subjectsResponse = `You have requested information about ${count} ${subjectName}${subjectList}.`;
     res.send(`${authenticatedResponse}\n\n${subjectsResponse}`);
 })
 
-//when you test this with curl make sure that the Content-Tpe header is set as application/Json
+//when you test this with curl make sure that the Content-Type header is set as application/json
+//as per the Sprint 3/Prep curl instructions:-
 
 //missing it: curl -X POST --data '["Bees"]' -H "X-Username: Ahmed" http://localhost:3000
 //returns: Expected the request body to be a JSON array of strings
