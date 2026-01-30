@@ -1,5 +1,13 @@
 # Chat Application
 
+## Live Demo
+
+- [Frontend (using long-polling only) deployed on Coolify](https://geraldine-edwards-chat-application-backend.hosting.codeyourfuture.io)
+- [Frontend (using websockets) deployed on Coolify](https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io/)
+
+
+---
+
 ## Coursework Link
 
 [https://sdc.codeyourfuture.io/decomposition/sprints/2/prep/](https://sdc.codeyourfuture.io/decomposition/sprints/2/prep/)
@@ -36,11 +44,6 @@ Add as a comment to your copy of this issue:
 - A link to the deployed backend on the CYF hosting environment
 
 ---
-
-## Live Demo
-
-- [Frontend deployed on Coolify](https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io/)
-- [Backend deployed on Coolify](https://geraldine-edwards-chat-app-websockets-backend.hosting.codeyourfuture.io)
 
 <br>
 <br>
