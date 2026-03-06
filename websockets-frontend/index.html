@@ -8,24 +8,29 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="chat-container">
-    <div class="chat-header">💬 Chatterbox</div>
-      <div id="chat-display">
-        <div id="chat-messages"></div>
+    <main>
+      <div id="chat-container">
+      <div class="chat-header">💬 Chatterbox</div>
+        <div id="chat-display">
+          <div id="chat-messages"></div>
+        </div>
       </div>
-     </div>
 
-    <div id="add-message-container">
-       <!-- add a new message to the chat -->
-      <form id="add-message-form">
-        <input type="text" id="sender-name" name="sender-name" placeholder="Your name" required>
-        <input type="text" id="new-message" name="new-message" placeholder="Type a message..." required>
-        <div class="form-actions">
-          <input type="color" id="color-picker" name="color" value="#000000">
-          <button type="submit" id="submit-message">Send</button>
-        </div>    
-        <div id="add-chat-message" aria-live="polite"></div>
-      </form>
-    </div>
+      <div id="add-message-container">
+        <!-- add a new message to the chat -->
+        <form id="add-message-form">
+          <label for="sender-name">Name:</label>
+          <input type="text" id="sender-name" name="sender-name" placeholder="Your name" required>
+          <label for="new-message">Message:</label>
+          <input type="text" id="new-message" name="new-message" placeholder="Type a message..." required>
+          <div class="form-actions">
+            <label for="color-picker">Pick a message text colour:</label>
+            <input type="color" id="color-picker" name="color" value="#000000">
+            <button type="submit" id="submit-message">Send</button>
+          </div>    
+          <div id="add-chat-message" aria-live="polite"></div>
+        </form>
+      </div>
+    </main>
   </body>
 </html>
