@@ -1,4 +1,4 @@
-# Chat Application
+# Chatterbox
 
 ## Live Demo
 
