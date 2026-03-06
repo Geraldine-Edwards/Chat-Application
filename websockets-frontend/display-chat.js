@@ -95,6 +95,10 @@ function appendMessageToChat(msg) {
   wrapper.appendChild(likesDiv);
 
   chatMessagesDiv.appendChild(wrapper);
+
+  //scroll to the bottom to show the latest message
+  const chatDisplayDiv = document.querySelector("#chat-display");
+  chatDisplayDiv.scrollTop = chatDisplayDiv.scrollHeight;
 }
 
 
