@@ -1,4 +1,4 @@
-# Chat Application
+# Chatterbox
 
 ## Live Demo
 
@@ -68,10 +68,6 @@ Add as a comment to your copy of this issue:
 - [x] Store all messages in backend
 - [x] Ensure frontend updates chat display after new message is sent
 - [x] Implemented auto-refresh (polling) for live updates
-
----
-
-_Phase 1 complete! The core chat functionality is working as required._
 
 ---
 
