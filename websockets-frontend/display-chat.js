@@ -10,6 +10,8 @@ let lastTimestamp = 0;
 
 let currentUserId = null;
 
+let lastSenderId = null;
+
 //this setter is called by the WebSocket client code.
 //sets to true when the WebSocket connects & false when the WebSocket closes
 function setWsConnectedValue(value) {
@@ -67,10 +69,16 @@ function appendMessageToChat(msg) {
   //access the message id in the new msg object and assign it to a 'data-message-id="<id>"' attribute in the div
   wrapper.dataset.messageId = msg.messageId
 
+  //only show sender if different from previous message
+  const showSender = lastSenderId !== msg.userId;
+  lastSenderId = msg.userId;
+
+  if (showSender) {
   const nameDiv = document.createElement('div');
   nameDiv.className = "chat-sender";
   nameDiv.textContent = msg.sender || "Anonymous";
   wrapper.appendChild(nameDiv);
+  }
 
   const bubbleDiv = document.createElement('div');
   bubbleDiv.className = "chat-bubble";

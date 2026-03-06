@@ -44,6 +44,8 @@ body {
 #chat-display {
   width: 90%;
   max-width: 570px; 
+  max-height: 45vh;
+  overflow-y: auto;
   background-color: var(--secondary-colour);
   padding: var(--padding);
   color: var(--text-colour);
@@ -54,6 +56,14 @@ body {
   justify-content: center;
   align-items: stretch;
 }
+#chat-display::-webkit-scrollbar {
+  width: 8px;
+}
+#chat-display::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+}
+
 .chat-message-wrapper {
   display: flex;
   flex-direction: column;
@@ -75,6 +85,7 @@ body {
   margin-bottom: 2px;
 }
 .chat-bubble {
+  font-size: 1.2rem;
   background: #e0e0e0;
   color: #222;
   padding: 10px 16px;
@@ -174,16 +185,22 @@ body {
 
 /* like/dislike buttons */
 .like-btn, .dislike-btn {
+  font-size: 0.9em;
+  padding: 2px 6px;
+  margin: 0 1px;
   background: none;
   border: none;
   outline: none;
   cursor: pointer;
-  font-size: 1.2em;
+
   padding: 4px 8px;
   margin: 0 2px;
   transition: background 0.2s, box-shadow 0.2s;
   border-radius: 4px;
   vertical-align: middle;
+}
+.chat-likes {
+  font-size: 0.75em;
 }
 
 /* user feedback */
