@@ -59,9 +59,11 @@ function appendMessageToChat(msg) {
   if (placeholder) chatMessagesDiv.removeChild(placeholder);
 
 
-  //create a message wrapper
+  //create a message wrapper and add alignment classes
   const wrapper = document.createElement('div');
-  wrapper.className = "chat-message-wrapper";
+  const isOwnMessage = currentUserId && msg.userId === currentUserId;
+  //add the correct user class to the message
+  wrapper.className = `chat-message-wrapper ${isOwnMessage ? "own" : "other"}`;
   //access the message id in the new msg object and assign it to a 'data-message-id="<id>"' attribute in the div
   wrapper.dataset.messageId = msg.messageId
 
@@ -72,8 +74,8 @@ function appendMessageToChat(msg) {
 
   const bubbleDiv = document.createElement('div');
   bubbleDiv.className = "chat-bubble";
+  bubbleDiv.style.color = msg.color
   bubbleDiv.textContent = msg.message;
-  bubbleDiv.style.color = msg.color || "#000000"
   wrapper.appendChild(bubbleDiv);
 
   const likesDiv = document.createElement('div');

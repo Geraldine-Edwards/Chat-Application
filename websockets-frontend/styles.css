@@ -52,11 +52,22 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
 }
 .chat-message-wrapper {
-  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
+
+.chat-message-wrapper.own {
+  align-items: flex-end;
+}
+
+.chat-message-wrapper.other {
+  align-items: flex-start;
+}
+
 .chat-sender {
   font-size: 0.85em;
   color: #555;
@@ -73,6 +84,14 @@ body {
   min-width: 40px;     /* gives a minimum width for very short messages */
   word-break: break-word;
   width: fit-content;  /* ensures the bubble fits its content */
+}
+
+.chat-message-wrapper.own .chat-bubble {
+  border-top-right-radius: 4px;
+}
+
+.chat-message-wrapper.other .chat-bubble {
+  border-top-left-radius: 4px; 
 }
 
 /* adding a message */
