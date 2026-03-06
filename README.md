@@ -71,10 +71,6 @@ Add as a comment to your copy of this issue:
 
 ---
 
-_Phase 1 complete! The core chat functionality is working as required._
-
----
-
 ## Phase 2: WebSocket Real-Time Updates
 
 ### 4. Real-time chat with WebSockets
