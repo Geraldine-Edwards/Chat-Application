@@ -8,6 +8,7 @@ let wsConnected = false;
 //stores latest message timestamp to avoid duplicates
 let lastTimestamp = 0;
 
+let currentUserId = null;
 
 //this setter is called by the WebSocket client code.
 //sets to true when the WebSocket connects & false when the WebSocket closes
@@ -127,10 +128,14 @@ async function longPollMessages() {
 
 //call identity on page load before any chat requests
 async function ensureUserId() {
-    await fetch(`${API_BASE_URL}/identity`, {
-        method: 'POST',
-        credentials: 'include'
-    });
+  const response = await fetch(`${API_BASE_URL}/identity`, {
+    method: 'POST',
+    credentials: 'include'
+  });
+
+  if (!response.ok) throw new Error("Failed to establish identity");
+  const data = await response.json();
+  currentUserId = data.userId;
 }
 
 
