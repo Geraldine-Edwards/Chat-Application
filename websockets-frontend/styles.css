@@ -84,6 +84,7 @@ body {
 .chat-sender {
   font-size: 0.85em;
   color: #555;
+  margin-top: 16px;
   margin-left: 8px;
   margin-bottom: 2px;
 }
