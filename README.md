@@ -2,9 +2,7 @@
 
 ## Live Demo
 
-- [Frontend (using long-polling only) deployed on Coolify](https://geraldine-edwards-chat-application-backend.hosting.codeyourfuture.io)
-- [Frontend (using websockets) deployed on Coolify](https://geraldine-edwards-chat-app-websockets-frontend.hosting.codeyourfuture.io/)
-
+- [Frontend (using websockets) deployed on Coolify](https://ge-chat-app-websockets-frontend.trainees.hosting.cyf.academy)
 
 ---
 
@@ -54,17 +52,20 @@ Add as a comment to your copy of this issue:
 ## Phase 1: Must Have Features
 
 ### 1. User can send a message to the chat
+
 - [x] Created `POST /chat` endpoint in backend
 - [x] Added message submission form in frontend
 - [x] Connected frontend form to backend endpoint
 - [x] Display new message in chat after sending
 
 ### 2. User can see all messages when opening the chat
+
 - [x] Created `GET /chat` endpoint in backend
 - [x] Fetch messages on frontend page load
 - [x] Display messages in chat area
 
 ### 3. Messages sent by any user are visible to all users
+
 - [x] Store all messages in backend
 - [x] Ensure frontend updates chat display after new message is sent
 - [x] Implemented auto-refresh (polling) for live updates
@@ -74,6 +75,7 @@ Add as a comment to your copy of this issue:
 ## Phase 2: WebSocket Real-Time Updates
 
 ### 4. Real-time chat with WebSockets
+
 - [x] Added a WebSocket server to the backend, attached to the HTTP server
 - [x] Implemented origin checks for WebSocket security
 - [x] On new message (via HTTP POST), broadcast to all connected WebSocket clients
@@ -88,6 +90,7 @@ Add as a comment to your copy of this issue:
 ## Phase 3: Additional Feature – Likes/Dislikes
 
 ### 5. Like/Dislike Functionality
+
 - [x] Added like/dislike buttons to each message in the frontend UI
 - [x] Implemented backend logic to track likes/dislikes per message using Sets of user IDs
 - [x] Ensured a user can only like or dislike (not both) per message
@@ -96,6 +99,7 @@ Add as a comment to your copy of this issue:
 - [x] UI updates instantly when a like/dislike is added or changed
 
 #### **How Likes/Dislikes Work**
+
 - Each message stores `likes` and `dislikes` as Sets of user IDs on the backend.
 - When a user likes or dislikes a message:
   - Their user ID is removed from both Sets.
@@ -137,5 +141,3 @@ Add as a comment to your copy of this issue:
 3. Open the frontend in your browser (see allowed origins in `ALLOWED_ORIGINS`).
 
 ---
-
-
